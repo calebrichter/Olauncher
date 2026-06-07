@@ -328,6 +328,11 @@ class AppDrawerFragment : Fragment() {
             viewModel.checkForMessages.call()
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.getAppList()
+    }
+
     override fun onStart() {
         super.onStart()
         binding.search.showKeyboard(prefs.autoShowKeyboard)

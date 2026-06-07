@@ -945,6 +945,51 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_rect_shade_color"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    style="@style/TextLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"
+                    android:text="@string/flow_header"
+                    android:textColor="?attr/primaryColor" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="12dp"
+                    android:visibility="visible">
+
+                    <TextView
+                        style="@style/TextSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="8dp"
+                        android:text="@string/flow_schedule"
+                        android:textColor="?attr/primaryColor" />
+
+                    <TextView
+                        android:id="@+id/flowSchedule"
+                        style="@style/TextSmallBold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:padding="10dp"
+                        android:text="@string/view" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:gravity="center_horizontal"
                 android:orientation="horizontal">
@@ -1092,6 +1137,77 @@
                     android:layout_marginEnd="4dp"
                     android:paddingVertical="4dp"
                     android:text="@string/enable" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/flowScheduleLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/dialogShadeColor"
+        android:clickable="true"
+        android:clipToPadding="false"
+        android:focusable="true"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/rounded_rectangle_dark"
+            android:elevation="8dp"
+            android:orientation="vertical"
+            android:outlineAmbientShadowColor="@color/colorPrimaryDark"
+            android:outlineSpotShadowColor="@color/colorPrimaryDark"
+            android:padding="20dp"
+            tools:targetApi="p">
+
+            <TextView
+                style="@style/TextLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/flow_header"
+                android:textColor="?attr/primaryColor" />
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="320dp"
+                android:layout_marginTop="16dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <TextView
+                    android:id="@+id/tvFlowScheduleDetails"
+                    style="@style/TextSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/primaryColor" />
+            </ScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/closeFlowSchedule"
+                    style="@style/TextSmallBold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="4dp"
+                    android:paddingHorizontal="12dp"
+                    android:text="@string/close" />
 
             </LinearLayout>
 

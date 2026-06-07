@@ -1,0 +1,78 @@
+{
+  "telegram_bot_token": "YOUR_BOT_TOKEN_HERE",
+  "telegram_chat_id": "YOUR_CHAT_ID_HERE",
+  "bypass_duration_minutes": 15,
+  "always_whitelisted_apps": [
+    "com.android.phone",
+    "com.android.server.telecom",
+    "com.engage.app"
+  ],
+  "phases": [
+    {
+      "name": "morning",
+      "start_time": "06:00",
+      "end_time": "12:00",
+      "trigger_app": "org.telegram.messenger",
+      "unlock_condition_minutes": 10,
+      "allowed_apps": [
+        "org.telegram.messenger"
+      ],
+      "unlocked_allowed_apps": [
+        "org.telegram.messenger",
+        "com.slack",
+        "md.obsidian",
+        "com.android.mms"
+      ]
+    },
+    {
+      "name": "noon",
+      "start_time": "12:00",
+      "end_time": "17:00",
+      "trigger_app": "com.sirma.mobile.bible.android",
+      "unlock_condition_minutes": 10,
+      "allowed_apps": [
+        "com.sirma.mobile.bible.android"
+      ],
+      "unlocked_allowed_apps": [
+        "org.telegram.messenger",
+        "com.slack",
+        "md.obsidian",
+        "com.android.mms"
+      ]
+    },
+    {
+      "name": "evening",
+      "start_time": "17:00",
+      "end_time": "20:00",
+      "trigger_app": "",
+      "unlock_condition_minutes": 0,
+      "allowed_apps": [
+        "com.substack.app",
+        "md.obsidian"
+      ],
+      "unlocked_allowed_apps": []
+    },
+    {
+      "name": "free",
+      "start_time": "20:00",
+      "end_time": "23:00",
+      "trigger_app": "",
+      "unlock_condition_minutes": 0,
+      "allowed_apps": [
+        "*"
+      ],
+      "unlocked_allowed_apps": []
+    },
+    {
+      "name": "night",
+      "start_time": "23:00",
+      "end_time": "06:00",
+      "trigger_app": "",
+      "unlock_condition_minutes": 0,
+      "allowed_apps": [
+        "com.hallowapp"
+      ],
+      "unlocked_allowed_apps": []
+    }
+  ]
+}

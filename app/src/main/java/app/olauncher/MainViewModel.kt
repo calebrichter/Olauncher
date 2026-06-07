@@ -101,6 +101,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun launchShortcut(appModel: AppModel.PinnedShortcut) {
+        val packageName = appModel.appPackage
+        if (!app.olauncher.flow.FlowEngine.isAppAllowed(appContext, packageName)) {
+            val activePhase = app.olauncher.flow.FlowEngine.getActivePhase(appContext)
+            val msg = if (activePhase != null) {
+                val remaining = app.olauncher.flow.FlowEngine.getMinutesRemainingToUnlock(appContext, activePhase)
+                if (remaining > 0) {
+                    val triggerLabel = prefs.getAppRenameLabel(activePhase.triggerApp).ifBlank { activePhase.triggerApp }
+                    val cleanLabel = if (triggerLabel.contains(".")) triggerLabel.substringAfterLast(".") else triggerLabel
+                    "Blocked. Spend $remaining more minutes in $cleanLabel to unlock."
+                } else {
+                    "${appModel.appLabel} is blocked during the ${activePhase.name} phase."
+                }
+            } else {
+                "Blocked by Flow."
+            }
+            appContext.showToast(msg)
+            return
+        }
+
         val launcher = appContext.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
         val query = LauncherApps.ShortcutQuery().apply {
             setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
@@ -352,6 +371,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun launchApp(packageName: String, activityClassName: String?, userHandle: UserHandle) {
+        if (!app.olauncher.flow.FlowEngine.isAppAllowed(appContext, packageName)) {
+            val activePhase = app.olauncher.flow.FlowEngine.getActivePhase(appContext)
+            val msg = if (activePhase != null) {
+                val remaining = app.olauncher.flow.FlowEngine.getMinutesRemainingToUnlock(appContext, activePhase)
+                if (remaining > 0) {
+                    val triggerLabel = prefs.getAppRenameLabel(activePhase.triggerApp).ifBlank { activePhase.triggerApp }
+                    val cleanLabel = if (triggerLabel.contains(".")) triggerLabel.substringAfterLast(".") else triggerLabel
+                    "Blocked. Spend $remaining more minutes in $cleanLabel to unlock."
+                } else {
+                    "${prefs.getAppRenameLabel(packageName).ifBlank { packageName }} is blocked during the ${activePhase.name} phase."
+                }
+            } else {
+                "Blocked by Flow."
+            }
+            appContext.showToast(msg)
+            return
+        }
+
         val launcher = appContext.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
         val activityInfo = launcher.getActivityList(packageName, userHandle)
 
@@ -388,7 +425,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun getAppList(includeHiddenApps: Boolean = false) {
         viewModelScope.launch {
             val apps = getAppsList(appContext, prefs, includeRegularApps = true, includeHiddenApps)
-            appList.value = apps
+            val filtered = apps.filter { app.olauncher.flow.FlowEngine.isAppAllowed(appContext, it.appPackage) }
+            appList.value = filtered
         }
         getPrivateSpaceAppList()
     }
@@ -464,7 +502,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             privateSpaceAvailable.value = handle != null
             if (handle != null) {
                 privateSpaceLocked.value = isPrivateSpaceLocked(appContext, handle)
-                privateSpaceApps.value = getPrivateSpaceApps(appContext, prefs)
+                val apps = getPrivateSpaceApps(appContext, prefs)
+                val filtered = apps.filter { app.olauncher.flow.FlowEngine.isAppAllowed(appContext, it.appPackage) }
+                privateSpaceApps.value = filtered
             } else {
                 privateSpaceLocked.value = true
                 privateSpaceApps.value = emptyList()

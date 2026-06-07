@@ -59,6 +59,17 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val flowStatusRunnable = object : Runnable {
+        override fun run() {
+            if (isAdded) {
+                // Refresh home screen layout and status every 5 seconds
+                populateHomeScreen(false)
+                handler.postDelayed(this, 5000)
+            }
+        }
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
@@ -81,10 +92,16 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
 
     override fun onResume() {
         super.onResume()
-        populateHomeScreen(false)
+        app.olauncher.flow.FlowEngine.reloadConfig(requireContext())
+        handler.post(flowStatusRunnable)
         viewModel.isOlauncherDefault()
         if (prefs.showStatusBar) showStatusBar()
         else hideStatusBar()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(flowStatusRunnable)
     }
 
     override fun onClick(view: View) {
@@ -267,6 +284,34 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.date.text = dateText.replace(".,", ",")
     }
 
+    private fun populateFlowStatus() {
+        if (!isAdded) return
+        val activePhase = app.olauncher.flow.FlowEngine.getActivePhase(requireContext())
+        if (activePhase == null) {
+            binding.tvFlowStatus?.visibility = View.GONE
+            return
+        }
+
+        val text = if (app.olauncher.flow.FlowEngine.isBypassActive(requireContext())) {
+            val remainingSec = app.olauncher.flow.FlowEngine.getBypassRemainingSeconds(requireContext())
+            val mins = remainingSec / 60
+            val secs = remainingSec % 60
+            "${activePhase.name.uppercase(Locale.getDefault())} (BYPASS: ${mins}m ${secs}s)"
+        } else {
+            if (app.olauncher.flow.FlowEngine.isPhaseUnlocked(requireContext(), activePhase)) {
+                "${activePhase.name.uppercase(Locale.getDefault())} (UNLOCKED)"
+            } else {
+                val remaining = app.olauncher.flow.FlowEngine.getMinutesRemainingToUnlock(requireContext(), activePhase)
+                val triggerLabel = prefs.getAppRenameLabel(activePhase.triggerApp).ifBlank { activePhase.triggerApp }
+                val cleanLabel = if (triggerLabel.contains(".")) triggerLabel.substringAfterLast(".") else triggerLabel
+                "${activePhase.name.uppercase(Locale.getDefault())} (Spend ${remaining}m in $cleanLabel)"
+            }
+        }
+
+        binding.tvFlowStatus?.text = text
+        binding.tvFlowStatus?.visibility = View.VISIBLE
+    }
+
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun populateScreenTime() {
         if (requireContext().appUsagePermissionGranted().not()) return
@@ -297,6 +342,7 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
     private fun populateHomeScreen(appCountUpdated: Boolean) {
         if (appCountUpdated) hideHomeApps()
         populateDateTime()
+        populateFlowStatus()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             populateScreenTime()
@@ -368,6 +414,11 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         isShortcut: Boolean,
         shortcutId: String?,
     ): Boolean {
+        if (packageName.isNotBlank() && !app.olauncher.flow.FlowEngine.isAppAllowed(requireContext(), packageName)) {
+            textView.visibility = View.GONE
+            return true
+        }
+
         // Get user handle for the app/shortcut
         val userHandle = getUserHandleFromString(requireContext(), userString)
 

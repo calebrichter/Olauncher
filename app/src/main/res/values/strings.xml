@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Olauncher</string>
+    <string name="app_name" translatable="false">Olauncher Flow</string>
     <string name="github" translatable="false">Github</string>
     <string name="lock_layout_description" translatable="false">lock layout description to be used a unique id to lock screen</string>
     <string name="recents_layout_description" translatable="false">recents layout description to be used a unique id to show recent apps</string>
@@ -164,4 +164,7 @@
     <string name="cheers">Cheers!</string>
     <string name="notification_bar">Notification bar</string>
     <string name="private_space">Private space</string>
+    <string name="flow_header" translatable="false">Flow</string>
+    <string name="flow_schedule" translatable="false">Flow schedule</string>
+    <string name="view" translatable="false">View</string>
 </resources>
