@@ -49,6 +49,7 @@ import app.olauncher.listener.ViewSwipeTouchListener
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.text.Html
 
 class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener {
 
@@ -112,6 +113,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
             R.id.date -> openCalendarApp()
             R.id.setDefaultLauncher -> viewModel.resetLauncherLiveData.call()
             R.id.tvScreenTime -> openScreenTimeDigitalWellbeing()
+            R.id.tvFlowStatus -> showFlowScheduleDialog()
+            R.id.closeFlowSchedule -> toggleFlowScheduleVisibility(false)
 
             else -> {
                 try { // Launch app
@@ -250,6 +253,8 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
         binding.setDefaultLauncher.setOnLongClickListener(this)
         binding.tvScreenTime.setOnClickListener(this)
         binding.tvScreenTime.setOnLongClickListener(this)
+        binding.tvFlowStatus?.setOnClickListener(this)
+        binding.closeFlowSchedule?.setOnClickListener(this)
     }
 
     private fun setHomeAlignment(horizontalGravity: Int = prefs.homeAlignment) {
@@ -756,6 +761,124 @@ class HomeFragment : Fragment(), View.OnClickListener, View.OnLongClickListener 
                 super.onClick(view)
                 textOnClick(view)
             }
+        }
+    }
+
+    private fun toggleFlowScheduleVisibility(show: Boolean) {
+        binding.flowScheduleLayout?.visibility = if (show) View.VISIBLE else View.GONE
+        val alpha = if (show) 0.1f else 1.0f
+        binding.dateTimeLayout.alpha = alpha
+        binding.homeAppsLayout.alpha = alpha
+        binding.tvScreenTime.alpha = alpha
+        binding.firstRunTips.alpha = alpha
+    }
+
+    private fun showFlowScheduleDialog() {
+        val context = requireContext()
+        val config = app.olauncher.flow.FlowEngine.getConfig(context)
+        val activePhase = app.olauncher.flow.FlowEngine.getActivePhase(context)
+        
+        val sb = java.lang.StringBuilder()
+        
+        // Always Allowed Apps
+        sb.append("<font color=\"#888888\">ALWAYS ALLOWED APPS</font><br/>")
+        if (config.alwaysWhitelistedApps.isEmpty()) {
+            sb.append("None<br/>")
+        } else {
+            val whitelistedNames = config.alwaysWhitelistedApps.map { getAppName(context, it) }.sorted()
+            sb.append("• ").append(whitelistedNames.joinToString("<br/>• ")).append("<br/>")
+        }
+        sb.append("<br/>")
+        
+        // Bypass Settings
+        sb.append("<font color=\"#888888\">TELEGRAM BYPASS</font><br/>")
+        sb.append("Duration: ${config.bypassDurationMinutes} minutes<br/>")
+        if (app.olauncher.flow.FlowEngine.isBypassActive(context)) {
+            val remainingSec = app.olauncher.flow.FlowEngine.getBypassRemainingSeconds(context)
+            val min = remainingSec / 60
+            val sec = remainingSec % 60
+            sb.append("Status: <b>ACTIVE</b> (")
+            if (min > 0) sb.append("${min}m ")
+            sb.append("${sec}s remaining)<br/>")
+        } else {
+            sb.append("Status: Inactive<br/>")
+        }
+        sb.append("<br/>")
+        
+        // Phases
+        sb.append("<font color=\"#888888\">DAILY SCHEDULE PHASES</font><br/><br/>")
+        for (phase in config.phases) {
+            val isActive = activePhase?.name == phase.name
+            val phaseTitle = phase.name.uppercase(Locale.getDefault())
+            
+            if (isActive) {
+                sb.append("<b>▶ $phaseTitle (CURRENT ACTIVE)</b><br/>")
+            } else {
+                sb.append("<b>$phaseTitle</b><br/>")
+            }
+            sb.append("Time: ${phase.startTime} - ${phase.endTime}<br/>")
+            
+            // Trigger app & unlock
+            if (phase.triggerApp.isNotBlank()) {
+                val triggerAppName = getAppName(context, phase.triggerApp)
+                val totalRequired = phase.unlockConditionMinutes
+                val elapsed = app.olauncher.flow.FlowEngine.getAppForegroundMinutes(context, phase.triggerApp, app.olauncher.flow.FlowEngine.getActivePhaseStartMillis(phase))
+                val unlocked = elapsed >= totalRequired
+                
+                sb.append("Trigger App: $triggerAppName<br/>")
+                sb.append("Unlock Condition: spent $totalRequired min (current: $elapsed min)<br/>")
+                if (unlocked) {
+                    sb.append("Status: <b>Unlocked</b><br/>")
+                } else {
+                    sb.append("Status: <b>Locked</b><br/>")
+                }
+            } else {
+                sb.append("Trigger: None (Unconditional)<br/>")
+            }
+            
+            // Allowed Apps
+            sb.append("Allowed Apps (locked): ")
+            if (phase.allowedApps.isEmpty()) {
+                sb.append("None")
+            } else {
+                val allowedNames = phase.allowedApps.map { getAppName(context, it) }.sorted()
+                sb.append(allowedNames.joinToString(", "))
+            }
+            sb.append("<br/>")
+            
+            // Unlocked Allowed Apps
+            if (phase.triggerApp.isNotBlank()) {
+                sb.append("Allowed Apps (unlocked): ")
+                if (phase.unlockedAllowedApps.isEmpty()) {
+                    sb.append("None")
+                } else {
+                    val unlockedNames = phase.unlockedAllowedApps.map { getAppName(context, it) }.sorted()
+                    sb.append(unlockedNames.joinToString(", "))
+                }
+                sb.append("<br/>")
+            }
+            sb.append("<br/>")
+        }
+        
+        val dialogMessage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Html.fromHtml(sb.toString(), Html.FROM_HTML_MODE_LEGACY)
+        } else {
+            @Suppress("DEPRECATION")
+            Html.fromHtml(sb.toString())
+        }
+        
+        binding.tvFlowScheduleDetails?.text = dialogMessage
+        toggleFlowScheduleVisibility(true)
+    }
+
+    private fun getAppName(context: Context, packageName: String): String {
+        if (packageName == "*") return "All Apps"
+        val pm = context.packageManager
+        return try {
+            val info = pm.getApplicationInfo(packageName, 0)
+            pm.getApplicationLabel(info).toString()
+        } catch (e: Exception) {
+            packageName.substringAfterLast('.')
         }
     }
 
